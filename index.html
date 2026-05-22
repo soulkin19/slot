@@ -82,96 +82,96 @@
             padding: 5px 15px;
         }
 
-        /* --- 追加: ハンバーガーメニューとランキングのスタイル --- */
-        #hamburger-menu {
+        /* ハンバーガーメニューとサイドバー（ランキング）のスタイル */
+        .hamburger-menu {
             position: absolute;
             top: 20px;
             left: 20px;
-            font-size: 32px;
             cursor: pointer;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 15px;
-            border-radius: 8px;
-            transition: background 0.3s;
-        }
-        #hamburger-menu:hover { background: rgba(0,0,0,0.6); }
-
-        #ranking-modal {
-            display: none;
-            position: fixed;
             z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            overflow: auto;
         }
-        .modal-content {
-            background-color: #2c3e50;
-            margin: 5% auto;
-            padding: 25px;
-            border: 2px solid #f1c40f;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 10px;
+        .hamburger-menu div {
+            width: 30px;
+            height: 4px;
+            background-color: #ecf0f1;
+            margin: 6px 0;
+            border-radius: 2px;
+            transition: 0.4s;
+        }
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1001;
+            top: 0;
+            left: 0;
+            background-color: #1a252f;
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 60px;
             text-align: left;
             color: #ecf0f1;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
         }
-        .close-btn {
-            color: #bdc3c7;
-            float: right;
-            font-size: 32px;
-            font-weight: bold;
+        .sidebar h2 {
+            text-align: center;
+            color: #f1c40f;
+            margin-bottom: 20px;
+        }
+        .close-sidebar {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 36px;
+            background: none;
+            border: none;
+            color: white;
             cursor: pointer;
-            line-height: 1;
         }
-        .close-btn:hover { color: #fff; }
-        .ranking-section { margin-bottom: 25px; }
-        .ranking-section h3 { 
-            color: #f1c40f; 
-            border-bottom: 2px solid #7f8c8d; 
-            padding-bottom: 5px; 
-            margin-bottom: 10px;
-            font-size: 20px;
+        .close-sidebar:hover {
+            color: #f1c40f;
         }
-        .ranking-list { list-style: none; padding: 0; margin: 0; }
-        .ranking-list li { 
-            padding: 5px 0; 
-            display: flex; 
-            justify-content: space-between;
-            border-bottom: 1px dashed #7f8c8d;
+        .ranking-category {
+            margin: 15px 20px;
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .ranking-category h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 5px;
             font-size: 16px;
+            color: #3498db;
         }
-        .ranking-list li span:nth-child(2) { font-weight: bold; color: #3498db; }
-
-        /* --- 追加: オートスピンボタンのスタイル --- */
-        #auto-spin-btn { background-color: #9b59b6; }
-        #auto-spin-btn:hover:not(:disabled) { background-color: #8e44ad; }
-        #auto-spin-btn.spinning { background-color: #e67e22; animation: pulse 1.5s infinite; }
-        #auto-spin-btn.spinning:hover:not(:disabled) { background-color: #d35400; }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(230, 126, 34, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+        .ranking-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .ranking-list li {
+            padding: 5px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
         }
     </style>
 </head>
 <body>
 
-    <!-- 追加: ハンバーガーメニュー -->
-    <div id="hamburger-menu" title="ランキングを表示">☰</div>
+    <!-- ハンバーガーメニュー -->
+    <div id="hamburger-menu" class="hamburger-menu">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
 
-    <!-- 追加: ランキングモーダル -->
-    <div id="ranking-modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-modal">&times;</span>
-            <h2 style="margin-top: 0; text-align: center;">🏆 ランキングボード</h2>
-            <div id="ranking-container">
-                <!-- JSでランキング一覧を生成 -->
-                <p style="text-align: center;">読み込み中...</p>
-            </div>
+    <!-- サイドバー (ランキング) -->
+    <div id="sidebar" class="sidebar">
+        <button id="close-sidebar" class="close-sidebar">&times;</button>
+        <h2>🏆 ランキング</h2>
+        <div id="ranking-container">
+            <!-- JSで動的に生成されます -->
         </div>
     </div>
 
@@ -232,9 +232,10 @@
             </select>
         </div>
 
-        <button id="spin-btn">スピン！</button>
-        <!-- 追加: オートスピンボタン -->
-        <button id="auto-spin-btn">オートスピン</button>
+        <div style="margin-top: 15px;">
+            <button id="spin-btn">スピン！</button>
+            <button id="auto-spin-btn" style="background-color: #8e44ad;">オートスピン開始</button>
+        </div>
         <p id="message"></p>
     </div>
 
@@ -259,18 +260,15 @@
 
         let currentUsername = "";
         let currentCredit = 0;
-        let spinCount = 0; // 内部カウント用（天井）
+        let spinCount = 0; // 天井カウント用
+        
+        // --- ランキング用追加ステータス ---
+        let totalSpinCount = 0;
+        let manualSpinCount = 0;
+        let autoSpinCount = 0;
+        let manCount = 0;
+
         const INITIAL_CREDIT = 100;
-
-        // --- 追加: ランキング用データ ---
-        let totalSpins = 0;
-        let manualSpins = 0;
-        let autoSpins = 0;
-        let jackpotCount = 0;
-
-        // --- 追加: オートスピン用フラグ ---
-        let isAutoSpinning = false;
-        let autoSpinTimeout = null;
 
         // --- シンボルの設定（低い順） ---
         const symbolConfig = [
@@ -307,7 +305,7 @@
         const displayName = document.getElementById('display-name');
         const creditDisplay = document.getElementById('credit-display');
         const spinBtn = document.getElementById('spin-btn');
-        const autoSpinBtn = document.getElementById('auto-spin-btn'); // 追加
+        const autoSpinBtn = document.getElementById('auto-spin-btn');
         const messageDisplay = document.getElementById('message');
         const betSelect = document.getElementById('bet-amount');
         const reels = [
@@ -321,10 +319,10 @@
             document.getElementById('stop-btn3')
         ];
 
-        // ランキング用要素取得
+        // ランキング用要素
         const hamburgerMenu = document.getElementById('hamburger-menu');
-        const rankingModal = document.getElementById('ranking-modal');
-        const closeModal = document.getElementById('close-modal');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebar = document.getElementById('close-sidebar');
         const rankingContainer = document.getElementById('ranking-container');
 
         let reelIntervals = [null, null, null];
@@ -332,9 +330,66 @@
         let finalResults = [null, null, null];
         let currentBetAmount = 0;
         
+        // オートスピン用状態
+        let isAutoSpinning = false;
+        let autoSpinTimeout = null;
+
         // 天井機能用フラグ
         let isGuaranteedSpin = false;
         let guaranteedSymbol = null;
+
+        // --- ランキング表示処理 ---
+        hamburgerMenu.addEventListener('click', () => {
+            sidebar.style.width = "300px";
+            loadRanking();
+        });
+
+        closeSidebar.addEventListener('click', () => {
+            sidebar.style.width = "0";
+        });
+
+        async function loadRanking() {
+            rankingContainer.innerHTML = "<p style='text-align:center;'>読み込み中...</p>";
+            try {
+                const snapshot = await get(child(ref(db), 'users'));
+                if (snapshot.exists()) {
+                    const usersData = snapshot.val();
+                    const usersArray = [];
+                    for (const username in usersData) {
+                        usersArray.push({
+                            username: username,
+                            credit: usersData[username].credit || 0,
+                            manCount: usersData[username].manCount || 0,
+                            totalSpinCount: usersData[username].totalSpinCount || 0,
+                            manualSpinCount: usersData[username].manualSpinCount || 0,
+                            autoSpinCount: usersData[username].autoSpinCount || 0
+                        });
+                    }
+
+                    const renderCategory = (title, key) => {
+                        const sorted = [...usersArray].sort((a, b) => b[key] - a[key]).slice(0, 5); // 上位5件
+                        let html = `<div class="ranking-category"><h3>${title}</h3><ul class="ranking-list">`;
+                        sorted.forEach((user, index) => {
+                            html += `<li><span>${index + 1}位: ${user.username}</span> <span>${user[key]}</span></li>`;
+                        });
+                        html += `</ul></div>`;
+                        return html;
+                    };
+
+                    rankingContainer.innerHTML = 
+                        renderCategory("💰 クレジット数", "credit") +
+                        renderCategory("🈵 当て回数", "manCount") +
+                        renderCategory("🔄 累計スピン数", "totalSpinCount") +
+                        renderCategory("👆 手動スピン数", "manualSpinCount") +
+                        renderCategory("🤖 オートスピン数", "autoSpinCount");
+                } else {
+                    rankingContainer.innerHTML = "<p style='text-align:center;'>データがありません。</p>";
+                }
+            } catch(e) {
+                console.error(e);
+                rankingContainer.innerHTML = "<p style='text-align:center;'>エラーが発生しました。</p>";
+            }
+        }
 
         // --- ログイン・登録処理 ---
         loginBtn.addEventListener('click', async () => {
@@ -350,31 +405,32 @@
                 const snapshot = await get(child(dbRef, `users/${currentUsername}`));
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
+                    // パスワードチェック
                     if (userData.password !== password) {
                         return alert("パスワードが間違っています。");
                     }
                     currentCredit = userData.credit;
                     spinCount = userData.spinCount || 0;
-                    
-                    // 追加: ランキング用データの読み込み
-                    totalSpins = userData.totalSpins || 0;
-                    manualSpins = userData.manualSpins || 0;
-                    autoSpins = userData.autoSpins || 0;
-                    jackpotCount = userData.jackpotCount || 0;
+                    totalSpinCount = userData.totalSpinCount || 0;
+                    manualSpinCount = userData.manualSpinCount || 0;
+                    autoSpinCount = userData.autoSpinCount || 0;
+                    manCount = userData.manCount || 0;
                 } else {
                     // 新規登録
                     currentCredit = INITIAL_CREDIT;
                     spinCount = 0;
-                    totalSpins = 0; manualSpins = 0; autoSpins = 0; jackpotCount = 0;
-                    
+                    totalSpinCount = 0;
+                    manualSpinCount = 0;
+                    autoSpinCount = 0;
+                    manCount = 0;
                     await set(userRef, { 
                         password: password,
                         credit: currentCredit,
                         spinCount: spinCount,
-                        totalSpins: totalSpins,
-                        manualSpins: manualSpins,
-                        autoSpins: autoSpins,
-                        jackpotCount: jackpotCount
+                        totalSpinCount: totalSpinCount,
+                        manualSpinCount: manualSpinCount,
+                        autoSpinCount: autoSpinCount,
+                        manCount: manCount
                     });
                 }
 
@@ -387,13 +443,13 @@
                         const data = snapshot.val();
                         currentCredit = data.credit;
                         spinCount = data.spinCount || 0;
-                        totalSpins = data.totalSpins || 0;
-                        manualSpins = data.manualSpins || 0;
-                        autoSpins = data.autoSpins || 0;
-                        jackpotCount = data.jackpotCount || 0;
+                        totalSpinCount = data.totalSpinCount || 0;
+                        manualSpinCount = data.manualSpinCount || 0;
+                        autoSpinCount = data.autoSpinCount || 0;
+                        manCount = data.manCount || 0;
                         
                         creditDisplay.textContent = currentCredit;
-                        if (!isSpinning.includes(true) && !isAutoSpinning) {
+                        if (!isSpinning.includes(true)) {
                             checkSpinPossibility();
                         }
                     }
@@ -406,45 +462,35 @@
 
         function checkSpinPossibility() {
             const betAmount = parseInt(betSelect.value, 10);
-            const canSpin = currentCredit >= betAmount;
-            spinBtn.disabled = !canSpin;
-            autoSpinBtn.disabled = !canSpin;
+            spinBtn.disabled = currentCredit < betAmount;
         }
         betSelect.addEventListener('change', checkSpinPossibility);
 
-        // --- 改修: スピン処理を共通関数化 (手動・オート両対応) ---
-        async function executeSpin(isAuto) {
+        // --- スピン実行の共通関数 ---
+        async function executeSpin(isAuto = false) {
             currentBetAmount = parseInt(betSelect.value, 10);
-            
-            // クレジット不足チェック
-            if (currentCredit < currentBetAmount) {
-                if (isAutoSpinning) {
-                    stopAutoSpin();
-                    messageDisplay.textContent = "クレジット不足のためオートスピンを停止しました。";
-                    messageDisplay.style.color = "#e74c3c";
-                }
-                return;
-            }
+            if (currentCredit < currentBetAmount) return;
 
             spinBtn.disabled = true;
             betSelect.disabled = true;
-            if (!isAutoSpinning) {
-                autoSpinBtn.disabled = true;
-            }
-            
             messageDisplay.textContent = isAuto ? "🤖 オートスピン中..." : "リールを止めてください！";
             messageDisplay.style.color = "#ecf0f1";
             finalResults = [null, null, null];
             
-            // カウントアップ処理
+            // スピン回数をカウントアップ
             spinCount++;
-            totalSpins++;
-            if (isAuto) autoSpins++; else manualSpins++;
+            totalSpinCount++;
+            if (isAuto) {
+                autoSpinCount++;
+            } else {
+                manualSpinCount++;
+            }
             
             // 天井判定 (100回目)
             if (spinCount >= 100) {
                 isGuaranteedSpin = true;
-                spinCount = 0;
+                spinCount = 0; // カウントリセット
+                // 🍎以上の当たりをランダムで選定
                 const winSymbols = symbolConfig.filter(s => s.icon !== "🍒");
                 guaranteedSymbol = winSymbols[Math.floor(Math.random() * winSymbols.length)];
             } else {
@@ -453,55 +499,155 @@
             }
 
             const newCredit = currentCredit - currentBetAmount;
-            
-            // DB保存
+            // クレジットと各種スピン回数をDBに保存
             await update(ref(db, 'users/' + currentUsername), { 
                 credit: newCredit,
                 spinCount: spinCount,
-                totalSpins: totalSpins,
-                manualSpins: manualSpins,
-                autoSpins: autoSpins
+                totalSpinCount: totalSpinCount,
+                manualSpinCount: manualSpinCount,
+                autoSpinCount: autoSpinCount
             });
 
             reels.forEach((reel, i) => {
                 isSpinning[i] = true;
-                // オートスピン中は手動で止められないようにボタンを無効化
-                stopBtns[i].disabled = isAutoSpinning;
+                stopBtns[i].disabled = isAuto; // オート時は手動ストップボタンを無効化
 
                 reelIntervals[i] = setInterval(() => {
                     reel.textContent = allIcons[Math.floor(Math.random() * allIcons.length)];
                 }, 50); 
             });
 
-            // オートスピンの場合は、時間差で自動的に止める
-            if (isAutoSpinning) {
-                setTimeout(() => stopReel(0), 600 + Math.random() * 400);
-                setTimeout(() => stopReel(1), 1200 + Math.random() * 400);
-                setTimeout(() => stopReel(2), 1800 + Math.random() * 400);
+            if (isAuto) {
+                autoStopReels();
             }
         }
 
-        // 手動スピンボタンのイベント
+        // --- 手動スピンボタン ---
         spinBtn.addEventListener('click', () => {
             executeSpin(false);
         });
 
-        // --- 追加: オートスピンの制御 ---
+        // --- オートスピンボタン ---
         autoSpinBtn.addEventListener('click', () => {
+            isAutoSpinning = !isAutoSpinning;
             if (isAutoSpinning) {
-                stopAutoSpin();
+                autoSpinBtn.textContent = "オートスピン停止";
+                autoSpinBtn.style.backgroundColor = "#e67e22";
+                if (!isSpinning.includes(true)) {
+                    if (currentCredit >= parseInt(betSelect.value, 10)) {
+                        executeSpin(true);
+                    } else {
+                        isAutoSpinning = false;
+                        autoSpinBtn.textContent = "オートスピン開始";
+                        autoSpinBtn.style.backgroundColor = "#8e44ad";
+                        alert("クレジットが不足しています！");
+                    }
+                }
             } else {
-                startAutoSpin();
+                autoSpinBtn.textContent = "オートスピン開始";
+                autoSpinBtn.style.backgroundColor = "#8e44ad";
+                clearTimeout(autoSpinTimeout);
             }
         });
 
-        function startAutoSpin() {
-            currentBetAmount = parseInt(betSelect.value, 10);
-            if (currentCredit < currentBetAmount) return;
-            
-            isAutoSpinning = true;
-            autoSpinBtn.textContent = "⏹️ オート停止";
-            autoSpinBtn.classList.add('spinning');
-            
-            // 現在スピン中でなければ直ちに開始
-            if (!isSpinning.includes(
+        // --- ストップ処理関数 ---
+        function stopReel(i) {
+            if (!isSpinning[i]) return;
+
+            clearInterval(reelIntervals[i]);
+            isSpinning[i] = false;
+            stopBtns[i].disabled = true;
+
+            // 確定スピンの場合はあらかじめ決まった絵柄を、そうでない場合はランダム
+            const resultSymbol = isGuaranteedSpin ? guaranteedSymbol : getRandomSymbol();
+            finalResults[i] = resultSymbol;
+            reels[i].textContent = resultSymbol.icon;
+
+            if (!isSpinning.includes(true)) {
+                judgeResult();
+            }
+        }
+
+        // 手動ストップボタンのイベント
+        stopBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => {
+                stopReel(i);
+            });
+        });
+
+        // オートストップ処理
+        function autoStopReels() {
+            let delay = 1000; // 最初のストップまで1秒
+            stopBtns.forEach((btn, i) => {
+                setTimeout(() => {
+                    if(isSpinning[i]) {
+                        stopReel(i);
+                    }
+                }, delay);
+                delay += 500; // 0.5秒間隔で停止
+            });
+        }
+
+        // --- 結果判定処理 ---
+        async function judgeResult() {
+            let winAmount = 0;
+            const icon1 = finalResults[0].icon;
+            const icon2 = finalResults[1].icon;
+            const icon3 = finalResults[2].icon;
+
+            let isManBingo = false;
+
+            if (icon1 === icon2 && icon2 === icon3) {
+                winAmount = finalResults[0].multiplier * currentBetAmount;
+                messageDisplay.textContent = `🎉 大当たり！ ${winAmount} クレジット獲得！`;
+                messageDisplay.style.color = "#f1c40f";
+                
+                // 🈵当てカウント
+                if (icon1 === "🈵") {
+                    isManBingo = true;
+                    manCount++;
+                }
+            } else if (icon1 === "🍒" || icon2 === "🍒" || icon3 === "🍒") {
+                const cherrySymbol = symbolConfig.find(s => s.icon === "🍒");
+                winAmount = cherrySymbol.multiplier * currentBetAmount;
+                messageDisplay.textContent = `🍒 チェリーボーナス！ ${winAmount} クレジット獲得！`;
+                messageDisplay.style.color = "#2ecc71";
+            } else {
+                messageDisplay.textContent = "ハズレ...";
+                messageDisplay.style.color = "#e74c3c";
+            }
+
+            const updates = {};
+            if (winAmount > 0) {
+                updates.credit = currentCredit + winAmount;
+            }
+            if (isManBingo) {
+                updates.manCount = manCount;
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await update(ref(db, 'users/' + currentUsername), updates);
+            }
+
+            betSelect.disabled = false;
+            checkSpinPossibility();
+
+            // オートスピン継続処理
+            if (isAutoSpinning) {
+                autoSpinTimeout = setTimeout(() => {
+                    if (isAutoSpinning) { // 待機中に停止されていないか再確認
+                        if (currentCredit >= parseInt(betSelect.value, 10)) {
+                            executeSpin(true);
+                        } else {
+                            isAutoSpinning = false;
+                            autoSpinBtn.textContent = "オートスピン開始";
+                            autoSpinBtn.style.backgroundColor = "#8e44ad";
+                            alert("クレジットが不足したため、オートスピンを停止しました。");
+                        }
+                    }
+                }, 0.5); // 1.5秒後に次のスピンを開始
+            }
+        }
+    </script>
+</body>
+</html>
