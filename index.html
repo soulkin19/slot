@@ -250,8 +250,8 @@
 
         // --- シンボルの設定（低い順） ---
         const symbolConfig = [
-            { icon: "🍒", multiplier: 2,   weight: 40 }, 
-            { icon: "🍎", multiplier: 5,   weight: 30 },
+            { icon: "🍒", multiplier: 2,   weight: 35 }, 
+            { icon: "🍎", multiplier: 5,   weight: 40 },
             { icon: "🍋", multiplier: 10,  weight: 25 },
             { icon: "🍇", multiplier: 15,  weight: 20 },
             { icon: "🍉", multiplier: 20,  weight: 15 },
@@ -603,7 +603,7 @@
             } else if (icon1 === "🍒" || icon2 === "🍒" || icon3 === "🍒") {
                 const cherrySymbol = symbolConfig.find(s => s.icon === "🍒");
                 winAmount = cherrySymbol.multiplier * currentBetAmount;
-                messageDisplay.textContent = `🍒 チェリーボーナス！ ${winAmount} クレジット獲得！`;
+                messageDisplay.textContent = `🍒 チェリーあき◯でボーナス！ ${winAmount} クレジット獲得！`;
                 messageDisplay.style.color = "#2ecc71";
             } else {
                 messageDisplay.textContent = "ハズレ...";
@@ -626,7 +626,7 @@
                     } else {
                         stopAutoSpin();
                     }
-                }, 1500);
+                }, 15);
             } else {
                 betSelect.disabled = false;
                 checkSpinPossibility();
