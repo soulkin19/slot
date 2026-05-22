@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase スロットゲーム</title>
+    <title>Firebase スロットゲーム（マニュアルストップ版）</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,22 +12,26 @@
             color: #ecf0f1;
             margin-top: 50px;
         }
-        #game-section {
-            display: none; /* 初期状態では隠す */
-        }
+        #game-section { display: none; }
         .slot-machine {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             margin: 30px 0;
         }
+        .reel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
         .reel {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             background-color: #fff;
             border: 4px solid #f1c40f;
             border-radius: 10px;
-            font-size: 40px;
+            font-size: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -43,53 +47,100 @@
             border: none;
             border-radius: 5px;
             transition: background 0.3s;
+            margin: 5px;
         }
-        button:hover { background-color: #c0392b; }
+        button:hover:not(:disabled) { background-color: #c0392b; }
         button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+        
+        .stop-btn {
+            background-color: #3498db;
+            font-size: 16px;
+            padding: 8px 16px;
+        }
+        .stop-btn:hover:not(:disabled) { background-color: #2980b9; }
+
         input {
             padding: 10px;
             font-size: 18px;
             border-radius: 5px;
             border: none;
         }
-        #message { font-size: 20px; font-weight: bold; color: #f1c40f; height: 30px; }
+        #message { font-size: 20px; font-weight: bold; color: #f1c40f; height: 30px; margin-top: 20px; }
         .credit-box { font-size: 24px; margin-bottom: 20px; }
+        .odds-table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #34495e;
+            font-size: 14px;
+        }
+        .odds-table th, .odds-table td {
+            border: 1px solid #7f8c8d;
+            padding: 5px 15px;
+        }
     </style>
 </head>
 <body>
 
     <h1>🎰 スロットゲーム</h1>
 
-    <!-- ログイン（ユーザー名入力）セクション -->
     <div id="login-section">
-        <p>ユーザー名を入力してゲームを始めてください</p>
+        <p>ユーザー名を入力してください</p>
         <input type="text" id="username-input" placeholder="ユーザー名" />
         <button id="login-btn">ゲーム開始</button>
     </div>
 
-    <!-- ゲームプレイセクション -->
     <div id="game-section">
         <p>プレイヤー: <strong id="display-name"></strong></p>
         <div class="credit-box">
             クレジット: <span id="credit-display">0</span>
         </div>
 
+        <table class="odds-table">
+            <tr><th>絵柄</th><th>倍率 (配当)</th></tr>
+            <tr><td>👑 👑 👑</td><td>x 100</td></tr>
+            <tr><td>7️⃣ 7️⃣ 7️⃣</td><td>x 50</td></tr>
+            <tr><td>💎 💎 💎</td><td>x 30</td></tr>
+            <tr><td>⭐ ⭐ ⭐</td><td>x 20</td></tr>
+            <tr><td>🍉 🍉 🍉</td><td>x 15</td></tr>
+            <tr><td>🍇 🍇 🍇</td><td>x 10</td></tr>
+            <tr><td>🍋 🍋 🍋</td><td>x 5</td></tr>
+            <tr><td>🔔 🔔 🔔</td><td>x 3</td></tr>
+            <tr><td>🍒 (どれか1つでも)</td><td>x 2</td></tr>
+        </table>
+
         <div class="slot-machine">
-            <div class="reel" id="reel1">🍒</div>
-            <div class="reel" id="reel2">🍒</div>
-            <div class="reel" id="reel3">🍒</div>
+            <div class="reel-container">
+                <div class="reel" id="reel1">🍒</div>
+                <button class="stop-btn" id="stop-btn1" disabled>止める</button>
+            </div>
+            <div class="reel-container">
+                <div class="reel" id="reel2">🔔</div>
+                <button class="stop-btn" id="stop-btn2" disabled>止める</button>
+            </div>
+            <div class="reel-container">
+                <div class="reel" id="reel3">🍉</div>
+                <button class="stop-btn" id="stop-btn3" disabled>止める</button>
+            </div>
         </div>
 
-        <button id="spin-btn">スピン (1クレジット消費)</button>
+        <div>
+            ベット額: 
+            <select id="bet-amount" style="padding: 5px; font-size: 16px;">
+                <option value="1">1</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+
+        <button id="spin-btn">スピン！</button>
         <p id="message"></p>
     </div>
 
-    <!-- Firebase SDK (ES Module形式) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
 
-        // あなたのFirebase設定
         const firebaseConfig = {
             apiKey: "AIzaSyCwhHspaG94goiCIjVj3h-Un5pBK3JTjMU",
             authDomain: "soulkin-aa3b7.firebaseapp.com",
@@ -101,15 +152,40 @@
             measurementId: "G-S5Z8TTWYE2"
         };
 
-        // Firebaseの初期化
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- ゲームの変数 ---
         let currentUsername = "";
         let currentCredit = 0;
-        const symbols = ["🍒", "🔔", "🍉", "⭐", "7️⃣"];
-        const INITIAL_CREDIT = 50; // 初回ログイン時の付与クレジット
+        const INITIAL_CREDIT = 100;
+
+        // --- シンボルの設定（絵柄を大幅追加） ---
+        const symbolConfig = [
+            { icon: "🍒", multiplier: 2,   weight: 40 }, // よく出る
+            { icon: "🍎", multiplier: 3,   weight: 30 },
+            { icon: "🍋", multiplier: 5,   weight: 25 },
+            { icon: "🍇", multiplier: 10,  weight: 20 },
+            { icon: "🍉", multiplier: 15,  weight: 15 },
+            { icon: "🍊", multiplier: 20,  weight: 10 },
+            { icon: "💎", multiplier: 30,  weight: 5  },
+            { icon: "7️⃣", multiplier: 50,  weight: 3  },
+            { icon: "🈵", multiplier: 100, weight: 1  }  // 超レア
+        ];
+
+        // 抽選用配列の作成
+        const weightedSymbols = [];
+        const allIcons = []; // アニメーション表示用
+        symbolConfig.forEach(symbol => {
+            allIcons.push(symbol.icon);
+            for (let i = 0; i < symbol.weight; i++) {
+                weightedSymbols.push(symbol);
+            }
+        });
+
+        function getRandomSymbol() {
+            const randomIndex = Math.floor(Math.random() * weightedSymbols.length);
+            return weightedSymbols[randomIndex];
+        }
 
         // --- HTML要素の取得 ---
         const loginSection = document.getElementById('login-section');
@@ -120,123 +196,152 @@
         const creditDisplay = document.getElementById('credit-display');
         const spinBtn = document.getElementById('spin-btn');
         const messageDisplay = document.getElementById('message');
+        const betSelect = document.getElementById('bet-amount');
         const reels = [
             document.getElementById('reel1'),
             document.getElementById('reel2'),
             document.getElementById('reel3')
         ];
+        const stopBtns = [
+            document.getElementById('stop-btn1'),
+            document.getElementById('stop-btn2'),
+            document.getElementById('stop-btn3')
+        ];
 
-        // --- ログイン処理 ---
+        // --- スピン状態の管理 ---
+        let reelIntervals = [null, null, null];
+        let isSpinning = [false, false, false];
+        let finalResults = [null, null, null];
+        let currentBetAmount = 0; // スピン中のベット額を保持
+
         loginBtn.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
-            if (!username) {
-                alert("ユーザー名を入力してください！");
-                return;
-            }
+            if (!username) return alert("ユーザー名を入力してください！");
 
             currentUsername = username;
             const dbRef = ref(db);
             const userRef = ref(db, 'users/' + currentUsername);
 
             try {
-                // データベースからユーザー情報を取得
                 const snapshot = await get(child(dbRef, `users/${currentUsername}`));
                 if (snapshot.exists()) {
-                    // 既存ユーザーの場合
                     currentCredit = snapshot.val().credit;
                 } else {
-                    // 新規ユーザーの場合、初期クレジットを保存
                     currentCredit = INITIAL_CREDIT;
-                    await set(userRef, {
-                        credit: currentCredit
-                    });
+                    await set(userRef, { credit: currentCredit });
                 }
 
-                // UIの切り替え
                 loginSection.style.display = 'none';
                 gameSection.style.display = 'block';
                 displayName.textContent = currentUsername;
 
-                // データベースのクレジット変動をリアルタイムで監視（画面に反映）
                 onValue(userRef, (snapshot) => {
                     if (snapshot.exists()) {
                         currentCredit = snapshot.val().credit;
                         creditDisplay.textContent = currentCredit;
-                        // クレジットが0の場合はスピン不可にする
-                        spinBtn.disabled = currentCredit <= 0;
+                        // スピン中でなければボタンの状態を更新
+                        if (!isSpinning.includes(true)) {
+                            checkSpinPossibility();
+                        }
                     }
                 });
-
             } catch (error) {
-                console.error("エラーが発生しました:", error);
-                alert("データベースへの接続に失敗しました。");
+                console.error(error);
+                alert("データベースエラーです。");
             }
         });
 
-        // --- スロットを回す処理 ---
-        spinBtn.addEventListener('click', async () => {
-            if (currentCredit <= 0) return;
+        function checkSpinPossibility() {
+            const betAmount = parseInt(betSelect.value, 10);
+            spinBtn.disabled = currentCredit < betAmount;
+        }
+        betSelect.addEventListener('change', checkSpinPossibility);
 
-            // ボタンを一時無効化し、クレジットを1減らす
+        // --- スピン開始処理 ---
+        spinBtn.addEventListener('click', async () => {
+            currentBetAmount = parseInt(betSelect.value, 10);
+            if (currentCredit < currentBetAmount) return;
+
+            // UIの状態をリセット
             spinBtn.disabled = true;
-            messageDisplay.textContent = "スピン中...";
+            betSelect.disabled = true;
+            messageDisplay.textContent = "リールを止めてください！";
+            messageDisplay.style.color = "#ecf0f1";
+            finalResults = [null, null, null];
             
-            const newCredit = currentCredit - 1;
-            // 先にFirebaseのクレジットを更新
+            // Firebaseのクレジットを減らす
+            const newCredit = currentCredit - currentBetAmount;
             await update(ref(db, 'users/' + currentUsername), { credit: newCredit });
 
-            // スロットのアニメーション（ダミー）
-            let counter = 0;
-            const interval = setInterval(() => {
-                reels.forEach(reel => {
-                    reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-                });
-                counter++;
-                
-                // 10回シャッフルしたら止める
-                if (counter > 10) {
-                    clearInterval(interval);
-                    judgeResult();
-                }
-            }, 100);
+            // 各リールを高速回転（30ミリ秒）
+            reels.forEach((reel, i) => {
+                isSpinning[i] = true;
+                stopBtns[i].disabled = false; // ストップボタンを有効化
+
+                reelIntervals[i] = setInterval(() => {
+                    // 表示用のアニメーション（全アイコンからランダムに表示）
+                    reel.textContent = allIcons[Math.floor(Math.random() * allIcons.length)];
+                }, 30); 
+            });
         });
 
-        // --- 結果の判定 ---
+        // --- ストップボタンの処理 ---
+        stopBtns.forEach((btn, i) => {
+            btn.addEventListener('click', () => {
+                if (!isSpinning[i]) return; // 既に止まっていれば何もしない
+
+                // 回転アニメーションを停止
+                clearInterval(reelIntervals[i]);
+                isSpinning[i] = false;
+                btn.disabled = true;
+
+                // 内部の抽選確率に基づいて最終的な絵柄を決定
+                const resultSymbol = getRandomSymbol();
+                finalResults[i] = resultSymbol;
+                reels[i].textContent = resultSymbol.icon;
+
+                // すべてのリールが止まったか確認
+                if (!isSpinning.includes(true)) {
+                    judgeResult();
+                }
+            });
+        });
+
+        // --- 結果判定処理 ---
         async function judgeResult() {
-            const resultSymbols = [
-                symbols[Math.floor(Math.random() * symbols.length)],
-                symbols[Math.floor(Math.random() * symbols.length)],
-                symbols[Math.floor(Math.random() * symbols.length)]
-            ];
+            let winAmount = 0;
+            const icon1 = finalResults[0].icon;
+            const icon2 = finalResults[1].icon;
+            const icon3 = finalResults[2].icon;
 
-            // リールに最終結果を表示
-            reels[0].textContent = resultSymbols[0];
-            reels[1].textContent = resultSymbols[1];
-            reels[2].textContent = resultSymbols[2];
-
-            // 判定ロジック（3つ揃ったら当たり）
-            if (resultSymbols[0] === resultSymbols[1] && resultSymbols[1] === resultSymbols[2]) {
-                let winAmount = 0;
-                if (resultSymbols[0] === "7️⃣") winAmount = 50;
-                else if (resultSymbols[0] === "⭐") winAmount = 20;
-                else winAmount = 10;
-
+            // 判定ロジック
+            if (icon1 === icon2 && icon2 === icon3) {
+                // 3つ揃った場合
+                winAmount = finalResults[0].multiplier * currentBetAmount;
                 messageDisplay.textContent = `🎉 大当たり！ ${winAmount} クレジット獲得！`;
+                messageDisplay.style.color = "#f1c40f";
+            } else if (icon1 === "🍒" || icon2 === "🍒" || icon3 === "🍒") {
+                // チェリーが1つでも出た場合
+                const cherrySymbol = symbolConfig.find(s => s.icon === "🍒");
+                winAmount = cherrySymbol.multiplier * currentBetAmount;
+                messageDisplay.textContent = `🍒 チェリーボーナス！ ${winAmount} クレジット獲得！`;
                 messageDisplay.style.color = "#2ecc71";
-
-                // 当たり分をFirebaseに加算
-                await update(ref(db, 'users/' + currentUsername), { 
-                    credit: currentCredit + winAmount 
-                });
             } else {
+                // ハズレ
                 messageDisplay.textContent = "ハズレ...";
                 messageDisplay.style.color = "#e74c3c";
             }
 
-            // スピンボタンを元に戻す
-            if (currentCredit > 0) {
-                spinBtn.disabled = false;
+            // 当たり分をFirebaseに加算
+            if (winAmount > 0) {
+                await update(ref(db, 'users/' + currentUsername), { 
+                    credit: currentCredit + winAmount 
+                });
             }
+
+            // 次のスピンの準備
+            betSelect.disabled = false;
+            checkSpinPossibility();
         }
     </script>
 </body>
