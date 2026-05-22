@@ -1,383 +1,443 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase スロットゲーム</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            margin-top: 50px;
-        }
-        #game-section { display: none; }
-        .slot-machine {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin: 30px 0;
-        }
-        .reel-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        .reel {
-            width: 90px;
-            height: 90px;
-            background-color: #fff;
-            border: 4px solid #f1c40f;
-            border-radius: 10px;
-            font-size: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-            margin: 5px;
-        }
-        button:hover:not(:disabled) { background-color: #c0392b; }
-        button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
-        
-        .stop-btn {
-            background-color: #3498db;
-            font-size: 16px;
-            padding: 8px 16px;
-        }
-        .stop-btn:hover:not(:disabled) { background-color: #2980b9; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スロットゲーム & ランキング</title>
+  <style>
+    /* 共通設定 */
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: #1a1a2e;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-        input {
-            padding: 10px;
-            font-size: 18px;
-            border-radius: 5px;
-            border: none;
-            margin: 5px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        #message { font-size: 20px; font-weight: bold; color: #f1c40f; height: 30px; margin-top: 20px; }
-        .credit-box { font-size: 24px; margin-bottom: 20px; }
-        .odds-table {
-            margin: 20px auto;
-            border-collapse: collapse;
-            background-color: #34495e;
-            font-size: 14px;
-        }
-        .odds-table th, .odds-table td {
-            border: 1px solid #7f8c8d;
-            padding: 5px 15px;
-        }
-    </style>
+    /* ハンバーガーメニューボタン */
+    #hamburger-btn {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: #0f3460;
+      color: white;
+      border: none;
+      font-size: 24px;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: background 0.2s;
+    }
+    #hamburger-btn:hover { background: #e94560; }
+
+    /* サイドメニュー (初期状態は画面外) */
+    #side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 260px;
+      height: 100%;
+      background-color: #16213e;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      z-index: 999;
+      transition: left 0.3s ease;
+      padding: 70px 20px 20px; /* 上部はボタンと被らないように余白 */
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #side-menu.open { left: 0; }
+
+    /* メニュー内の要素 */
+    .menu-section {
+      margin-bottom: 30px;
+      background: #0f3460;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .menu-section h3 { margin-top: 0; border-bottom: 2px solid #e94560; padding-bottom: 5px; }
+    
+    /* 自動スピン トグル */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; border-radius: 24px; transition: .4s;
+    }
+    .slider:before {
+      position: absolute; content: "";
+      height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; border-radius: 50%; transition: .4s;
+    }
+    input:checked + .slider { background-color: #e94560; }
+    input:checked + .slider:before { transform: translateX(26px); }
+
+    /* ランキング */
+    select {
+      width: 100%; padding: 8px; margin-bottom: 15px;
+      background: #1a1a2e; color: white; border: 1px solid #e94560; border-radius: 4px;
+    }
+    #ranking-list { list-style: none; padding: 0; margin: 0; font-size: 14px; }
+    #ranking-list li {
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; justify-content: space-between;
+    }
+    #ranking-list li:last-child { border-bottom: none; }
+    .rank-num { font-weight: bold; color: #e94560; width: 25px; }
+
+    /* スロット画面 */
+    #game-container {
+      text-align: center;
+      background: #0f3460;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 4px solid #e94560;
+    }
+    .stats {
+      display: flex; justify-content: space-around;
+      margin-bottom: 20px; font-size: 20px; font-weight: bold;
+    }
+    .reels {
+      display: flex; gap: 15px; margin-bottom: 25px; justify-content: center;
+    }
+    .reel {
+      width: 80px; height: 80px;
+      background: #fff; color: #000;
+      font-size: 40px;
+      display: flex; justify-content: center; align-items: center;
+      border-radius: 10px;
+      box-shadow: inset 0 3px 5px rgba(0,0,0,0.3);
+    }
+    #spin-btn {
+      background: #e94560; color: white;
+      border: none; padding: 15px 40px;
+      font-size: 24px; font-weight: bold; border-radius: 8px;
+      cursor: pointer; transition: transform 0.1s;
+      box-shadow: 0 5px 0 #b32a42;
+    }
+    #spin-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #b32a42; }
+    #spin-btn:disabled { background: #555; box-shadow: 0 5px 0 #333; cursor: not-allowed; transform: none; }
+    #message { margin-top: 15px; height: 24px; font-size: 18px; color: #f9ca24; font-weight: bold; }
+  </style>
 </head>
 <body>
 
-    <h1>🎰 スロットゲーム</h1>
+  <!-- ハンバーガーボタン -->
+  <button id="hamburger-btn">☰</button>
 
-    <!-- ログインセクション -->
-    <div id="login-section">
-        <p>ログインまたは新規登録</p>
-        <input type="text" id="username-input" placeholder="ユーザー名" />
-        <input type="password" id="password-input" placeholder="パスワード" />
-        <button id="login-btn">ログイン / 登録</button>
+  <!-- サイドメニュー -->
+  <div id="side-menu">
+    <div class="menu-section">
+      <h3>設定</h3>
+      <div class="toggle-container">
+        <span>自動スピン</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="auto-spin-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
-    <!-- ゲームプレイセクション -->
-    <div id="game-section">
-        <p>プレイヤー: <strong id="display-name"></strong></p>
-        <div class="credit-box">
-            クレジット: <span id="credit-display">0</span>
-        </div>
-
-        <!-- オッズ表 -->
-        <table class="odds-table">
-            <tr><th>絵柄</th><th>倍率 (配当)</th></tr>
-            <tr><td>🈵 🈵 🈵</td><td>x 300</td></tr>
-            <tr><td>7️⃣ 7️⃣ 7️⃣</td><td>x 100</td></tr>
-            <tr><td>💎 💎 💎</td><td>x 50</td></tr>
-            <tr><td>🍊 🍊 🍊</td><td>x 30</td></tr>
-            <tr><td>🍉 🍉 🍉</td><td>x 20</td></tr>
-            <tr><td>🍇 🍇 🍇</td><td>x 15</td></tr>
-            <tr><td>🍋 🍋 🍋</td><td>x 10</td></tr>
-            <tr><td>🍎 🍎 🍎</td><td>x 5</td></tr>
-            <tr><td>🍒 (どれか1つでも)</td><td>x 2</td></tr>
-        </table>
-
-        <!-- スロットマシン本体 -->
-        <div class="slot-machine">
-            <div class="reel-container">
-                <div class="reel" id="reel1">🍒</div>
-                <button class="stop-btn" id="stop-btn1" disabled>止める</button>
-            </div>
-            <div class="reel-container">
-                <div class="reel" id="reel2">🍎</div>
-                <button class="stop-btn" id="stop-btn2" disabled>止める</button>
-            </div>
-            <div class="reel-container">
-                <div class="reel" id="reel3">🍋</div>
-                <button class="stop-btn" id="stop-btn3" disabled>止める</button>
-            </div>
-        </div>
-
-        <div>
-            ベット額: 
-            <select id="bet-amount" style="padding: 5px; font-size: 16px;">
-                <option value="1">1</option>
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="50">50</option>
-            </select>
-        </div>
-
-        <button id="spin-btn">スピン！</button>
-        <p id="message"></p>
+    <div class="menu-section">
+      <h3>🏆 ランキング</h3>
+      <select id="ranking-category">
+        <option value="credits">所持クレジット</option>
+        <option value="jackpotCount">🈵 当たり回数</option>
+        <option value="totalSpins">累計スピン数</option>
+        <option value="manualSpins">手動スピン数</option>
+        <option value="autoSpins">自動スピン数</option>
+      </select>
+      <ul id="ranking-list">
+        <li>読み込み中...</li>
+      </ul>
     </div>
+  </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+  <!-- ゲーム画面 -->
+  <div id="game-container">
+    <div class="stats">
+      <div>プレイヤー: <span id="player-name-display">---</span></div>
+      <div>💰 <span id="credit-display">1000</span></div>
+    </div>
+    <div class="reels">
+      <div class="reel" id="reel1">🍒</div>
+      <div class="reel" id="reel2">🔔</div>
+      <div class="reel" id="reel3">🍇</div>
+    </div>
+    <button id="spin-btn">SPIN (10枚)</button>
+    <div id="message"></div>
+  </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCwhHspaG94goiCIjVj3h-Un5pBK3JTjMU",
-            authDomain: "soulkin-aa3b7.firebaseapp.com",
-            databaseURL: "https://soulkin-aa3b7-default-rtdb.firebaseio.com",
-            projectId: "soulkin-aa3b7",
-            storageBucket: "soulkin-aa3b7.firebasestorage.app",
-            messagingSenderId: "358331064206",
-            appId: "1:358331064206:web:d7760ea0919259418a4edf",
-            measurementId: "G-S5Z8TTWYE2"
-        };
+  <!-- Firebase v9 & ゲームロジック (Type: moduleを使用) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // 🔴 ご自身のFirebaseプロジェクトの設定に書き換えてください
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-        let currentUsername = "";
-        let currentCredit = 0;
-        let spinCount = 0; // 内部カウント用
-        const INITIAL_CREDIT = 100;
+    let db;
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } catch (e) {
+      console.warn("Firebaseが設定されていません。ローカルでのみ動作します。");
+    }
 
-        // --- シンボルの設定（低い順） ---
-        const symbolConfig = [
-            { icon: "🍒", multiplier: 2,   weight: 40 }, // ハズレ救済
-            { icon: "🍎", multiplier: 5,   weight: 30 },
-            { icon: "🍋", multiplier: 10,  weight: 25 },
-            { icon: "🍇", multiplier: 15,  weight: 20 },
-            { icon: "🍉", multiplier: 20,  weight: 15 },
-            { icon: "🍊", multiplier: 30,  weight: 10 },
-            { icon: "💎", multiplier: 50,  weight: 5  },
-            { icon: "7️⃣", multiplier: 100, weight: 3  },
-            { icon: "🈵", multiplier: 300, weight: 1  }  // 超激レア
-        ];
+    // --- プレイヤーデータ管理 ---
+    let playerId = localStorage.getItem("slotPlayerId");
+    let playerName = localStorage.getItem("slotPlayerName");
+    
+    if (!playerId) {
+      playerId = 'user_' + Math.random().toString(36).substr(2, 9);
+      playerName = prompt("ランキングに表示する名前を入力してください", "名無しギャンブラー") || "名無しギャンブラー";
+      localStorage.setItem("slotPlayerId", playerId);
+      localStorage.setItem("slotPlayerName", playerName);
+      
+      // 初回登録 (Firebase)
+      if (db) {
+        setDoc(doc(db, "users", playerId), {
+          playerName: playerName,
+          credits: 1000,
+          jackpotCount: 0,
+          totalSpins: 0,
+          manualSpins: 0,
+          autoSpins: 0
+        }, { merge: true });
+      }
+    }
+    document.getElementById("player-name-display").textContent = playerName;
 
-        const weightedSymbols = [];
-        const allIcons = [];
-        symbolConfig.forEach(symbol => {
-            allIcons.push(symbol.icon);
-            for (let i = 0; i < symbol.weight; i++) {
-                weightedSymbols.push(symbol);
-            }
-        });
+    // --- ゲーム設定 ---
+    const symbols = ['🍒', '🍇', '🔔', '🍉', '7️⃣', '🈵'];
+    let credits = 1000; // 初期クレジット（DB連携している場合は後で上書きされます）
+    const spinCost = 10;
+    let isSpinning = false;
+    let isAutoMode = false;
+    let autoSpinTimeout;
 
-        function getRandomSymbol() {
-            return weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)];
-        }
+    // UI要素の取得
+    const creditDisplay = document.getElementById("credit-display");
+    const spinBtn = document.getElementById("spin-btn");
+    const msgDisplay = document.getElementById("message");
+    const reels = [document.getElementById("reel1"), document.getElementById("reel2"), document.getElementById("reel3")];
 
-        // --- HTML要素の取得 ---
-        const loginSection = document.getElementById('login-section');
-        const gameSection = document.getElementById('game-section');
-        const usernameInput = document.getElementById('username-input');
-        const passwordInput = document.getElementById('password-input');
-        const loginBtn = document.getElementById('login-btn');
-        const displayName = document.getElementById('display-name');
-        const creditDisplay = document.getElementById('credit-display');
-        const spinBtn = document.getElementById('spin-btn');
-        const messageDisplay = document.getElementById('message');
-        const betSelect = document.getElementById('bet-amount');
-        const reels = [
-            document.getElementById('reel1'),
-            document.getElementById('reel2'),
-            document.getElementById('reel3')
-        ];
-        const stopBtns = [
-            document.getElementById('stop-btn1'),
-            document.getElementById('stop-btn2'),
-            document.getElementById('stop-btn3')
-        ];
+    // --- UI/メニュー制御 ---
+    const hamburgerBtn = document.getElementById('hamburger-btn');
+    const sideMenu = document.getElementById('side-menu');
+    const autoSpinToggle = document.getElementById('auto-spin-toggle');
+    const rankingCategory = document.getElementById('ranking-category');
 
-        let reelIntervals = [null, null, null];
-        let isSpinning = [false, false, false];
-        let finalResults = [null, null, null];
-        let currentBetAmount = 0;
+    hamburgerBtn.addEventListener('click', () => {
+      sideMenu.classList.toggle('open');
+      if (sideMenu.classList.contains('open')) {
+        loadRanking(rankingCategory.value); // 開いた時にランキング更新
+      }
+    });
+
+    autoSpinToggle.addEventListener('change', (e) => {
+      isAutoMode = e.target.checked;
+      if (isAutoMode && !isSpinning) {
+        startSpin(true);
+      } else if (!isAutoMode) {
+        clearTimeout(autoSpinTimeout);
+      }
+    });
+
+    rankingCategory.addEventListener('change', (e) => {
+      loadRanking(e.target.value);
+    });
+
+    // --- ランキング取得 (Firebase) ---
+    async function loadRanking(category) {
+      const listElement = document.getElementById("ranking-list");
+      listElement.innerHTML = "<li>読み込み中...</li>";
+      
+      if (!db) {
+        listElement.innerHTML = "<li>データベース未接続</li>";
+        return;
+      }
+
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, orderBy(category, "desc"), limit(10));
+        const querySnapshot = await getDocs(q);
         
-        // 天井機能用フラグ
-        let isGuaranteedSpin = false;
-        let guaranteedSymbol = null;
-
-        // --- ログイン・登録処理 ---
-        loginBtn.addEventListener('click', async () => {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-            if (!username || !password) return alert("ユーザー名とパスワードを入力してください！");
-
-            currentUsername = username;
-            const dbRef = ref(db);
-            const userRef = ref(db, 'users/' + currentUsername);
-
-            try {
-                const snapshot = await get(child(dbRef, `users/${currentUsername}`));
-                if (snapshot.exists()) {
-                    const userData = snapshot.val();
-                    // パスワードチェック
-                    if (userData.password !== password) {
-                        return alert("パスワードが間違っています。");
-                    }
-                    currentCredit = userData.credit;
-                    spinCount = userData.spinCount || 0;
-                } else {
-                    // 新規登録
-                    currentCredit = INITIAL_CREDIT;
-                    spinCount = 0;
-                    await set(userRef, { 
-                        password: password,
-                        credit: currentCredit,
-                        spinCount: spinCount
-                    });
-                }
-
-                loginSection.style.display = 'none';
-                gameSection.style.display = 'block';
-                displayName.textContent = currentUsername;
-
-                onValue(userRef, (snapshot) => {
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        currentCredit = data.credit;
-                        spinCount = data.spinCount || 0;
-                        creditDisplay.textContent = currentCredit;
-                        if (!isSpinning.includes(true)) {
-                            checkSpinPossibility();
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error(error);
-                alert("データベースエラーです。");
-            }
+        listElement.innerHTML = "";
+        let rank = 1;
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const score = data[category] || 0;
+          
+          const li = document.createElement("li");
+          li.innerHTML = `<span class="rank-num">${rank}</span> <span class="rank-name">${data.playerName}</span> <span class="rank-score">${score}</span>`;
+          listElement.appendChild(li);
+          rank++;
         });
+      } catch (e) {
+        console.error("ランキング取得エラー:", e);
+        listElement.innerHTML = "<li>取得に失敗しました<br>※Firestoreのインデックス設定が必要な場合があります</li>";
+      }
+    }
 
-        function checkSpinPossibility() {
-            const betAmount = parseInt(betSelect.value, 10);
-            spinBtn.disabled = currentCredit < betAmount;
+    // --- データ保存 (Firebase) ---
+    async function saveStats(isAuto, winAmount, isJackpot) {
+      if (!db) return;
+      const userRef = doc(db, "users", playerId);
+      
+      const updateData = {
+        credits: credits,
+        totalSpins: increment(1)
+      };
+      
+      if (isAuto) updateData.autoSpins = increment(1);
+      else updateData.manualSpins = increment(1);
+      
+      if (isJackpot) updateData.jackpotCount = increment(1);
+
+      try {
+        await updateDoc(userRef, updateData);
+      } catch (e) {
+        // ドキュメントが存在しない場合は新規作成
+        if (e.code === 'not-found') {
+           await setDoc(userRef, {
+             playerName: playerName,
+             credits: credits,
+             jackpotCount: isJackpot ? 1 : 0,
+             totalSpins: 1,
+             manualSpins: isAuto ? 0 : 1,
+             autoSpins: isAuto ? 1 : 0
+           });
         }
-        betSelect.addEventListener('change', checkSpinPossibility);
+      }
+    }
 
-        // --- スピン開始処理 ---
-        spinBtn.addEventListener('click', async () => {
-            currentBetAmount = parseInt(betSelect.value, 10);
-            if (currentCredit < currentBetAmount) return;
+    // --- ゲームロジック ---
+    function updateCredits(amount) {
+      credits += amount;
+      creditDisplay.textContent = credits;
+    }
 
-            spinBtn.disabled = true;
-            betSelect.disabled = true;
-            messageDisplay.textContent = "リールを止めてください！";
-            messageDisplay.style.color = "#ecf0f1";
-            finalResults = [null, null, null];
-            
-            // スピン回数をカウントアップ
-            spinCount++;
-            
-            // 天井判定 (100回目)
-            if (spinCount >= 100) {
-                isGuaranteedSpin = true;
-                spinCount = 0; // カウントリセット
-                // 🍎以上の当たりをランダムで選定
-                const winSymbols = symbolConfig.filter(s => s.icon !== "🍒");
-                guaranteedSymbol = winSymbols[Math.floor(Math.random() * winSymbols.length)];
-            } else {
-                isGuaranteedSpin = false;
-                guaranteedSymbol = null;
-            }
-
-            const newCredit = currentCredit - currentBetAmount;
-            // クレジットとスピン回数をDBに保存
-            await update(ref(db, 'users/' + currentUsername), { 
-                credit: newCredit,
-                spinCount: spinCount
-            });
-
-            reels.forEach((reel, i) => {
-                isSpinning[i] = true;
-                stopBtns[i].disabled = false;
-
-                reelIntervals[i] = setInterval(() => {
-                    reel.textContent = allIcons[Math.floor(Math.random() * allIcons.length)];
-                }, 50); 
-            });
-        });
-
-        // --- ストップボタンの処理 ---
-        stopBtns.forEach((btn, i) => {
-            btn.addEventListener('click', () => {
-                if (!isSpinning[i]) return;
-
-                clearInterval(reelIntervals[i]);
-                isSpinning[i] = false;
-                btn.disabled = true;
-
-                // 確定スピンの場合はあらかじめ決まった絵柄を、そうでない場合はランダム
-                const resultSymbol = isGuaranteedSpin ? guaranteedSymbol : getRandomSymbol();
-                finalResults[i] = resultSymbol;
-                reels[i].textContent = resultSymbol.icon;
-
-                if (!isSpinning.includes(true)) {
-                    judgeResult();
-                }
-            });
-        });
-
-        // --- 結果判定処理 ---
-        async function judgeResult() {
-            let winAmount = 0;
-            const icon1 = finalResults[0].icon;
-            const icon2 = finalResults[1].icon;
-            const icon3 = finalResults[2].icon;
-
-            if (icon1 === icon2 && icon2 === icon3) {
-                winAmount = finalResults[0].multiplier * currentBetAmount;
-                messageDisplay.textContent = `🎉 大当たり！ ${winAmount} クレジット獲得！`;
-                messageDisplay.style.color = "#f1c40f";
-            } else if (icon1 === "🍒" || icon2 === "🍒" || icon3 === "🍒") {
-                const cherrySymbol = symbolConfig.find(s => s.icon === "🍒");
-                winAmount = cherrySymbol.multiplier * currentBetAmount;
-                messageDisplay.textContent = `🍒 チェリーボーナス！ ${winAmount} クレジット獲得！`;
-                messageDisplay.style.color = "#2ecc71";
-            } else {
-                messageDisplay.textContent = "ハズレ...";
-                messageDisplay.style.color = "#e74c3c";
-            }
-
-            if (winAmount > 0) {
-                await update(ref(db, 'users/' + currentUsername), { 
-                    credit: currentCredit + winAmount 
-                });
-            }
-
-            betSelect.disabled = false;
-            checkSpinPossibility();
+    async function startSpin(isAuto = false) {
+      if (isSpinning || credits < spinCost) {
+        if (credits < spinCost) msgDisplay.textContent = "クレジットが足りません！";
+        if (isAutoMode) {
+          isAutoMode = false;
+          autoSpinToggle.checked = false;
         }
-    </script>
+        return;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+      updateCredits(-spinCost);
+      msgDisplay.textContent = "";
+
+      // スピン演出 (簡易アニメーション)
+      let spinCount = 0;
+      const spinInterval = setInterval(() => {
+        reels.forEach(reel => {
+          reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+        });
+        spinCount++;
+        
+        if (spinCount > 15) { // 約1.5秒後に停止
+          clearInterval(spinInterval);
+          judgeResult(isAuto);
+        }
+      }, 100);
+    }
+
+    function judgeResult(isAuto) {
+      const result = [
+        symbols[Math.floor(Math.random() * symbols.length)],
+        symbols[Math.floor(Math.random() * symbols.length)],
+        symbols[Math.floor(Math.random() * symbols.length)]
+      ];
+
+      reels[0].textContent = result[0];
+      reels[1].textContent = result[1];
+      reels[2].textContent = result[2];
+
+      let winAmount = 0;
+      let isJackpot = false;
+
+      // 判定ロジック
+      if (result[0] === result[1] && result[1] === result[2]) {
+        // 3つ揃い
+        if (result[0] === '🈵') {
+          winAmount = 1000;
+          isJackpot = true;
+          msgDisplay.textContent = "🎉 超大当たり！ 1000枚獲得！ 🎉";
+        } else if (result[0] === '7️⃣') {
+          winAmount = 300;
+          msgDisplay.textContent = "🎯 大当たり！ 300枚獲得！";
+        } else {
+          winAmount = 100;
+          msgDisplay.textContent = "🎊 当たり！ 100枚獲得！";
+        }
+      } else if (result[0] === result[1] || result[1] === result[2] || result[0] === result[2]) {
+        // 2つ揃い (小役)
+        winAmount = 20;
+        msgDisplay.textContent = "✨ 小当たり！ 20枚獲得！";
+      }
+
+      if (winAmount > 0) {
+        updateCredits(winAmount);
+      }
+
+      // データの保存
+      saveStats(isAuto, winAmount, isJackpot);
+
+      isSpinning = false;
+      spinBtn.disabled = false;
+
+      // 自動スピンがオンなら次を実行
+      if (isAutoMode && credits >= spinCost) {
+        autoSpinTimeout = setTimeout(() => startSpin(true), 800); // 0.8秒間隔で次へ
+      } else if (isAutoMode && credits < spinCost) {
+        isAutoMode = false;
+        autoSpinToggle.checked = false;
+        msgDisplay.textContent = "クレジットが足りないため自動停止しました";
+      }
+    }
+
+    // イベントリスナーの登録
+    spinBtn.addEventListener('click', () => {
+      // 手動スピン時は自動スピンをオフにする
+      if (isAutoMode) {
+        isAutoMode = false;
+        autoSpinToggle.checked = false;
+        clearTimeout(autoSpinTimeout);
+      }
+      startSpin(false);
+    });
+
+  </script>
 </body>
 </html>
